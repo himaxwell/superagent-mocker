@@ -113,6 +113,74 @@ function mock(superagent) {
     }
   };
 
+  // Patch Request.then()
+  var oldThen = originalMethods.then = superagent.Request.prototype.then;
+  reqProto.then = function(cb) {
+    var state = this._superagentMockerState;
+    if (state && state.current) {
+      var current = state.current;
+      setTimeout(function(request) {
+        var error = null;
+        var response = null;
+        try {
+          response = current(request);
+          if (!/20[0-6]/.test(response.status)) {
+            // superagent puts status and response on the error it returns,
+            // which should be an actual instance of Error
+            // See http://visionmedia.github.io/superagent/#error-handling
+            error = new Error(response.status);
+            error.status = response.status;
+            error.response = response;
+            response = null
+          } else {
+            error = null
+          }
+        } catch (ex) {
+          error = ex
+          response = null
+        }
+
+        cb && cb(response);
+      }, value(mock.timeout), state.request);
+    } else {
+      oldThen.call(this, cb);
+    }
+  };
+
+  // Patch Catch()
+  var oldCatch = originalMethods.catch = superagent.Request.prototype.catch;
+  reqProto.catch = function(cb) {
+    var state = this._superagentMockerState;
+    if (state && state.current) {
+      var current = state.current;
+      setTimeout(function(request) {
+        var error = null;
+        var response = null;
+        try {
+          response = current(request);
+          if (!/20[0-6]/.test(response.status)) {
+            // superagent puts status and response on the error it returns,
+            // which should be an actual instance of Error
+            // See http://visionmedia.github.io/superagent/#error-handling
+            error = new Error(response.status);
+            error.status = response.status;
+            error.response = response;
+            response = null
+          } else {
+            error = null
+          }
+        } catch (ex) {
+          error = ex
+          response = null
+        }
+
+        cb && cb(error, response);
+      }, value(mock.timeout), state.request);
+    } else {
+      oldCatch.call(this, cb);
+    }
+  };
+
   // Patch Request.set()
   var oldSet = originalMethods.set = reqProto.set;
   reqProto.set = function(key, val) {
