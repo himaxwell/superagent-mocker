@@ -33,7 +33,7 @@
     "mocha": "^2.2.4",
     "mocha-lcov-reporter": "^1.0.0",
     "should": "^6.0.1",
-    "superagent": "^1.2.0"
+    "superagent-es6-promise": "^1.0.0"
   },
   "dependencies": {
     "path-to-regexp": "^1.1.0"

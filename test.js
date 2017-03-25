@@ -5,7 +5,7 @@
 /**
  * Dependencies
  */
-var request = require('superagent');
+var request = require('superagent-es6-promise');
 var should  = require('should');
 var mock    = process.env.SM_COV
                 ? require('./index-cov')(request)
@@ -26,6 +26,18 @@ describe('superagent mock', function() {
         return { id: req.params.id };
       });
       request.get('/topics/1').end(function(_, data) {
+        data.should.have.property('id', '1');
+        done();
+      });
+    });
+
+    it('should mock for get with promise', function(done) {
+      mock.get('/topics/:id', function (req) {
+        req.params.id.should.be.equal('1');
+        return { id: req.params.id };
+      });
+
+      request.get('/topics/1/').then(function(data) {
         data.should.have.property('id', '1');
         done();
       });
@@ -65,6 +77,22 @@ describe('superagent mock', function() {
         });
     });
 
+    it('should mock for post with promise', function(done) {
+      mock.post('/topics/:id', function(req) {
+        return {
+          id: req.params.id,
+          content: req.body.content
+        };
+      });
+      request
+        .post('/topics/5', { content: 'Hello world' })
+        .then(function(data) {
+          data.should.have.property('id', '5');
+          data.should.have.property('content', 'Hello world');
+          done();
+        });
+    });
+
     it('should mock for put', function(done) {
       mock.put('/topics/:id', function(req) {
         return { id: req.params.id, content: req.body.content };
@@ -72,6 +100,19 @@ describe('superagent mock', function() {
       request
         .put('/topics/7', { id: 7, content: 'hello world!11' })
         .end(function(_, data) {
+          data.should.have.property('id', '7');
+          data.should.have.property('content', 'hello world!11');
+          done();
+        });
+    });
+
+    it('should mock for put with promise', function(done) {
+      mock.put('/topics/:id', function(req) {
+        return { id: req.params.id, content: req.body.content };
+      });
+      request
+        .put('/topics/7', { id: 7, content: 'hello world!11' })
+        .then(function(data) {
           data.should.have.property('id', '7');
           data.should.have.property('content', 'hello world!11');
           done();
@@ -91,6 +132,19 @@ describe('superagent mock', function() {
         });
     });
 
+    it('should mock for patch', function(done) {
+      mock.patch('/topics/:id', function(req) {
+        return { id: req.params.id, content: req.body.content };
+      });
+      request
+        .patch('/topics/7', { id: 7, content: 'hello world!11' })
+        .then(function(data) {
+          data.should.have.property('id', '7');
+          data.should.have.property('content', 'hello world!11');
+          done();
+        });
+    });
+
     it('should mock for delete', function(done) {
       mock.del('/topics/:id', function(req) {
         return { id: req.params.id, content: req.body.content };
@@ -98,6 +152,19 @@ describe('superagent mock', function() {
       request
         .del('/topics/7', { id: 7, content: 'yay' })
         .end(function(_, data) {
+          data.should.have.property('id', '7');
+          data.should.have.property('content', 'yay');
+          done(); // just done
+        });
+    });
+
+    it('should mock for delete with promise', function(done) {
+      mock.del('/topics/:id', function(req) {
+        return { id: req.params.id, content: req.body.content };
+      });
+      request
+        .del('/topics/7', { id: 7, content: 'yay' })
+        .then(function(data) {
           data.should.have.property('id', '7');
           data.should.have.property('content', 'yay');
           done(); // just done
@@ -197,6 +264,18 @@ describe('superagent mock', function() {
       request
         .get('http://example.com')
         .end(function(err, res) {
+          err.should.equal(error);
+          done();
+        });
+    });
+
+    it('should provide error within catch method', function(done) {
+      var error = Error('This should be in the callback!');
+      mock.get('http://example.com', function(req) {
+        throw error;
+      });
+      request
+        .get('http://example.com').catch(function(err) {
           err.should.equal(error);
           done();
         });
@@ -315,6 +394,21 @@ describe('superagent mock', function() {
       ;
     });
 
+    it('should rewrite post() data by send() with promise', function(done) {
+      mock.post('/topics/:id', function(req) {
+        return req.body;
+      });
+      request
+        .post('/topics/5', { content: 'Hello Universe' })
+        .send({ content: 'Hello world', title: 'Yay!' })
+        .then(function(data) {
+          data.should.have.property('title', 'Yay!');
+          data.should.have.property('content', 'Hello world');
+          done();
+        })
+      ;
+    });
+
     it('should parse parameters from query()', function(done) {
       mock.get('/topics/:id', function(req) {
         return req;
@@ -326,6 +420,31 @@ describe('superagent mock', function() {
         .query({ test: 'yay' })
         .query({ foo: 'bar', baz: 'bat' })
         .end(function(_, data) {
+          data.should.have.property('query');
+          should.deepEqual(data.query, {
+            hello: 'world',
+            xx: 'yy',
+            zz: '0',
+            test: 'yay',
+            foo: 'bar',
+            baz: 'bat'
+          });
+          done();
+        })
+      ;
+    });
+
+    it('should parse parameters from query() with promise', function(done) {
+      mock.get('/topics/:id', function(req) {
+        return req;
+      });
+      request
+        .get('/topics/5')
+        .query('hello=world')
+        .query('xx=yy&zz=0')
+        .query({ test: 'yay' })
+        .query({ foo: 'bar', baz: 'bat' })
+        .then(function(data) {
           data.should.have.property('query');
           should.deepEqual(data.query, {
             hello: 'world',

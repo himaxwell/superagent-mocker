@@ -247,7 +247,7 @@ mock.unmock = function(superagent) {
 
   var reqProto = superagent.Request.prototype;
 
-  ['end', 'set', 'send'].forEach(function(method) {
+  ['then', 'catch', 'end', 'set', 'send'].forEach(function(method) {
     reqProto[method] = originalMethods[method];
   });
 
